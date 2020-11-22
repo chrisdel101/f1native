@@ -5,116 +5,85 @@
  * @format
  * @flow strict-local
  */
+import 'react-native-gesture-handler'
+import React from 'react'
+import {NavigationContainer} from '@react-navigation/native'
 
-import React from 'react';
-import {
-  SafeAreaView,
-  StyleSheet,
-  ScrollView,
-  View,
-  Text,
-  StatusBar,
-} from 'react-native';
+import {SafeAreaView, StyleSheet, ScrollView, View, Text} from 'react-native'
 
-import MySearchBar from '/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/MySearchBar.js';
-import {Header} from 'react-native-elements';
-import {
-  LearnMoreLinks,
-  Colors,
-  DebugInstructions,
-  ReloadInstructions,
-} from 'react-native/Libraries/NewAppScreen';
+import MySearchBar from '/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/components/MySearchBar.js'
+import {Header} from 'react-native-elements'
+import driverController from './src/api/controllers/driverController'
 
+// returns a promise
+const httpReq = (url) => {
+  return fetch(url)
+    .then((response) => response.json())
+    .then((data) => {
+      return data
+    })
+}
 const App: () => React$Node = () => {
+  const apiUrl = 'https://api.github.com/users/hacktivist123/repos'
+  console.log(driverController.getAllDriverSlugs())
   return (
     <>
-      <StatusBar barStyle="dark-content" />
-      <SafeAreaView>
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          style={styles.scrollView}>
-          <Header
-            leftComponent={{icon: 'menu', color: '#fff'}}
-            centerComponent={{text: 'FORMULA 1 CARDS', style: {color: '#fff'}}}
-            rightComponent={{icon: 'home', color: '#fff'}}
-          />
-          <MySearchBar />
-          {global.HermesInternal == null ? null : (
-            <View style={styles.engine}>
-              <Text style={styles.footer}>Engine: Hermes</Text>
+      <NavigationContainer>
+        <SafeAreaView>
+          <ScrollView
+            contentInsetAdjustmentBehavior="automatic"
+            style={styles.scrollView}>
+            <Header
+              leftComponent={{icon: 'menu', color: '#fff'}}
+              centerComponent={{
+                text: 'FORMULA 1 CARDS',
+                style: {color: '#fff'}
+              }}
+              rightComponent={{icon: 'home', color: '#fff'}}
+            />
+            <MySearchBar />
+            <View style={styles.body}>
+              <View style={styles.sectionContainer}>
+                {/* <Text style={styles.sectionTitle}>My Cards</Text>
+              <Image
+                style={styles.testImage}
+                source={{
+                  uri:
+                    'https://f1-cards.herokuapp.com/api/mobile/driver/valtteri-bottas',
+                }}
+              /> */}
+              </View>
             </View>
-          )}
-          <View style={styles.body}>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Step One</Text>
-              <Text style={styles.sectionDescription}>
-                Edit <Text style={styles.highlight}>App.js</Text> to change this
-                screen and then come back to see your edits.
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>See Your Changes</Text>
-              <Text style={styles.sectionDescription}>
-                <ReloadInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Debug</Text>
-              <Text style={styles.sectionDescription}>
-                <DebugInstructions />
-              </Text>
-            </View>
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>Learn More</Text>
-              <Text style={styles.sectionDescription}>
-                Read the docs to discover what to do next:
-              </Text>
-            </View>
-            <LearnMoreLinks />
-          </View>
-        </ScrollView>
-      </SafeAreaView>
+          </ScrollView>
+        </SafeAreaView>
+      </NavigationContainer>
     </>
-  );
-};
+  )
+}
 
 const styles = StyleSheet.create({
   scrollView: {
-    backgroundColor: Colors.lighter,
+    backgroundColor: 'white'
   },
   engine: {
     position: 'absolute',
-    right: 0,
+    right: 0
   },
   body: {
-    backgroundColor: Colors.white,
+    backgroundColor: 'white'
   },
   sectionContainer: {
     marginTop: 32,
-    paddingHorizontal: 24,
-  },
-  sectionTitle: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: Colors.black,
-  },
-  sectionDescription: {
-    marginTop: 8,
-    fontSize: 18,
-    fontWeight: '400',
-    color: Colors.dark,
+    paddingHorizontal: 24
   },
   highlight: {
-    fontWeight: '700',
+    fontWeight: '700'
   },
-  footer: {
-    color: Colors.dark,
-    fontSize: 12,
-    fontWeight: '600',
-    padding: 4,
-    paddingRight: 12,
-    textAlign: 'right',
-  },
-});
 
-export default App;
+  testImage: {
+    width: '100%',
+    height: 200
+  }
+})
+
+export default App
