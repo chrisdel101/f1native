@@ -6,26 +6,34 @@
  * @flow strict-local
  */
 import 'react-native-gesture-handler'
-import React from 'react'
+import React, {useState, useEffect} from 'react'
 import {NavigationContainer} from '@react-navigation/native'
-
+import cache from './src/api/cache'
 import {SafeAreaView, StyleSheet, ScrollView, View, Text} from 'react-native'
 
 import MySearchBar from '/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/components/MySearchBar.js'
 import {Header} from 'react-native-elements'
 import driverController from './src/api/controllers/driverController'
+import teamController from './src/api/controllers/teamController.js'
+import AutoComplete from './src/components/AutoComplete'
+const utils = require('/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/api/utils.js')
+const endpoints = require('/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/api/endpoints.js')
+// const cache = require('../cache')
 
-// returns a promise
-const httpReq = (url) => {
-  return fetch(url)
-    .then((response) => response.json())
-    .then((data) => {
-      return data
-    })
-}
 const App: () => React$Node = () => {
-  const apiUrl = 'https://api.github.com/users/hacktivist123/repos'
-  console.log(driverController.getAllDriverSlugs())
+  const [drivers, setDrivers] = useState([])
+  const [teams, setTeams] = useState('')
+  // set state on load like componentDidMount
+  useEffect(() => {
+    driverController
+      .cacheAndGetDrivers(1400, cache.driversCache)
+      .then((res) => setDrivers(res))
+    teamController
+      .cacheAndGetTeams(1400, cache.teamsCache)
+      .then((res) => setTeams(res))
+    // setDrivers(driverController.cacheAndGetDrivers(1400, cache.driversCache))
+    // setTeams(teamController.cacheAndGetTeams(1400, cache.teamsCache))
+  }, []) // pass in an empty array as a second argument
   return (
     <>
       <NavigationContainer>
@@ -43,16 +51,7 @@ const App: () => React$Node = () => {
             />
             <MySearchBar />
             <View style={styles.body}>
-              <View style={styles.sectionContainer}>
-                {/* <Text style={styles.sectionTitle}>My Cards</Text>
-              <Image
-                style={styles.testImage}
-                source={{
-                  uri:
-                    'https://f1-cards.herokuapp.com/api/mobile/driver/valtteri-bottas',
-                }}
-              /> */}
-              </View>
+              <AutoComplete drivers={drivers} teams={teams} />
             </View>
           </ScrollView>
         </SafeAreaView>

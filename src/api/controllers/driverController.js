@@ -1,13 +1,12 @@
 const utils = require('../utils.js')
 const endpoints = require('../endpoints')
 const cache = require('../cache')
-const debug = require('debug')
-const log = debug('f1:log')
 
 exports.getAllDriverSlugs = () => {
   return utils
     .httpReq(`${endpoints.prodAPIEndpoint}/drivers`)
     .then((drivers) => drivers)
+    .catch((e) => console.error('An error in getAllDriverSlugs', e))
 }
 // make all names lowercase
 exports.makeEntriesLower = (arr) => {
@@ -52,7 +51,6 @@ exports.getRandomDriver = () => {
 // return name_slug or false
 exports.checkDriverApi = (nameToCheck) => {
   try {
-    log('checkDriverApi')
     nameToCheck = nameToCheck.toLowerCase()
     return Promise.resolve(
       module.exports.cacheAndGetDrivers(cache.driversCache, 1400)
@@ -78,29 +76,34 @@ exports.checkDriverApi = (nameToCheck) => {
 // takes a cache obj and timeStamp
 // gets/caches drivers array
 // returns array cache for from api
-exports.cacheAndGetDrivers = (driversCache, expiryTime) => {
+exports.cacheAndGetDrivers = (expiryTime, driversCache = {}) => {
   // if not in cache OR time stamp passes fails use new call
   if (
     !driversCache.hasOwnProperty('drivers_slugs') ||
     !utils.verifyTimeStamp(driversCache.drivers_slugs.timeStamp, expiryTime)
   ) {
-    return module.exports.getAllDriverSlugs().then((drivers) => {
-      console.log('cacheAndGetDrivers() - NOT FROM CACHE')
-      drivers = JSON.parse(drivers)
-      driversCache.drivers_slugs = {
-        drivers_slugs: drivers,
-        timeStamp: new Date()
-      }
-      // console.log('here', drivers)
-      return drivers
-    })
+    return (
+      module.exports
+        .getAllDriverSlugs()
+        // .then((drivers) => {
+        //   // console.log('DRIVERS', drivers)
+        //   driversCache.drivers_slugs = {
+        //     drivers_slugs: drivers,
+        //     timeStamp: new Date()
+        //   }
+        //   // console.log('cacheAndGetDrivers() - NOT FROM CACHE', driversCache)
+
+        //   return drivers
+        // })
+        .catch((e) => console.error('An error on cacheAndGetDrivers', e))
+    )
   } else {
     console.log('cacheAndGetDrivers() - FROM CACHE')
     // if less than 24 hours old get from cache
     return driversCache.drivers_slugs.drivers_slugs
   }
 }
-exports.createDriverObject = (driverSlug) => {
+exports.mapDriverObj = (driverSlug) => {
   if (!driverSlug) {
     throw Error()
   }
@@ -116,7 +119,7 @@ exports.createDriverObject = (driverSlug) => {
       timeStamp: new Date()
     }
   } catch (e) {
-    console.error('An error in driverController.createDriverObject', e)
+    console.error('An error in driverController.mapDriverObj', e)
   }
 }
 
@@ -124,7 +127,6 @@ exports.createDriverObject = (driverSlug) => {
 exports.cacheAndGetDriver = (driverSlug, driverCache) => {
   try {
     // console.log('cacheAndGetDriver()', driverCache)
-    log('cacheAndGetDriver')
     // if not in cache add to cache
     if (!driverCache.hasOwnProperty(driverSlug)) {
       // call all drivers api and check if it's there
@@ -133,7 +135,7 @@ exports.cacheAndGetDriver = (driverSlug, driverCache) => {
         if (slug) {
           console.log('cacheAndGetDriver() - NOT FROM CACHE')
           //  add to cache
-          driverCache[driverSlug] = this.createDriverObject(driverSlug)
+          driverCache[driverSlug] = this.mapDriverObj(driverSlug)
           // console.log('here', driverCache)
           // return new driver obj
           return driverCache[driverSlug]
@@ -154,7 +156,7 @@ exports.cacheAndGetDriver = (driverSlug, driverCache) => {
       } else {
         console.log('cacheAndGetDriver() - NOT FROM CACHE')
         console.log('failed time stamp')
-        driverCache[driverSlug] = this.createDriverObject(driverSlug)
+        driverCache[driverSlug] = this.mapDriverObj(driverSlug)
         // console.log('here', driverCache)
         // return new driver obj
         return driverCache[driverSlug]
