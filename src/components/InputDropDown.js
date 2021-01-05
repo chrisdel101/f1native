@@ -2,17 +2,23 @@ import React from 'react'
 import {StyleSheet, Text, TouchableOpacity} from 'react-native'
 
 const InputDropDown: (props) => React$Node = (props) => {
+  function test() {
+    console.log('test')
+  }
   return (
     <TouchableOpacity>
-      {props.searchData
-        ? props.searchData.map((datum, i) => {
+      {!props.searchData
+        ? null
+        : props.searchData.map((datum, i) => {
             return (
-              <Text style={styles.itemText} key={i}>
+              <Text
+                style={styles.itemText}
+                key={i}
+                onPress={() => props.onPress(datum.name_slug)}>
                 {datum.name}
               </Text>
             )
-          })
-        : null}
+          })}
     </TouchableOpacity>
   )
 }

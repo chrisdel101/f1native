@@ -31,6 +31,7 @@ const App: () => React$Node = () => {
     let datax = [...args].flat()
     console.log('d', datax)
     setData([...datax])
+    console.log('all', allData)
   }
   useEffect(() => {
     ///SET STATE
@@ -50,29 +51,48 @@ const App: () => React$Node = () => {
       combineData(data1, data2)
     }
     combine()
-  }, []) // pass in an empty array as a second argument
+  }, [])
+  useEffect(() => {
+    autoComplete(input)
+  }, [input])
   const handleChildchangeText = (e) => {
+    console.log('e', e)
+    // set input data
     setInput(e)
-    AutoComplete(e)
+    resetInputState(e)
+    // use input data in autoComplete
   }
-  function AutoComplete(inputVal) {
-    console.log('s', inputVal)
-    if (inputVal === '') {
-      return
+  const resetInputState = (e) => {
+    if (!e) {
+      setInput('')
     }
-    // check if input is within drivers name
-    let searchArr = []
-    allData.some((obj, i) => {
-      if (obj.name.includes(inputVal)) {
-        searchArr.push(allData[i])
-      }
-    })
-    // alphabetize arr
-    searchArr = searchArr.sort()
-    setSearchData(searchArr)
-    console.log('searchArr', searchArr)
-    console.log('searchdata ', searchData)
-    return searchArr
+  }
+  // takes input state and saves it as searchData
+  function autoComplete(inputVal) {
+    console.log('s', inputVal)
+    if (allData.length <= 0) {return} // prettier-ignore
+    else if (!inputVal) {
+      // set searchval to blank
+      return setSearchData('')
+    } else {
+      // check if input is within drivers name
+      let searchArr = []
+      allData.some((obj, i) => {
+        if (obj.name.includes(inputVal)) {
+          searchArr.push(allData[i])
+        }
+      })
+      // alphabetize arr
+      searchArr = searchArr.sort()
+      // set searchData
+      return setSearchData(searchArr)
+      // setTimeout(() => {
+      //   console.log('searchdata ', searchData)
+      // }, 100)
+    }
+  }
+  function test(e) {
+    console.log(e)
   }
   return (
     <>
@@ -91,7 +111,7 @@ const App: () => React$Node = () => {
             />
             <MySearchBar onChangeText={handleChildchangeText} value={input} />
             <View style={styles.body}>
-              <InputDropDown searchData={searchData} />
+              <InputDropDown searchData={searchData} onPress={test} />
             </View>
           </ScrollView>
         </SafeAreaView>
