@@ -8,8 +8,8 @@
 import 'react-native-gesture-handler'
 import React, {useState, useEffect} from 'react'
 import {NavigationContainer} from '@react-navigation/native'
-import cache from './src/api/cache'
-import {SafeAreaView, StyleSheet, ScrollView, View, Text} from 'react-native'
+import {cache, testCache} from './src/api/cache'
+import {SafeAreaView, StyleSheet, ScrollView, View, Image} from 'react-native'
 
 import InputDropDown from '/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/components/InputDropDown.js'
 import MySearchBar from '/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/components/MySearchBar.js'
@@ -18,7 +18,6 @@ import driverController from './src/api/controllers/driverController'
 import teamController from './src/api/controllers/teamController.js'
 const utils = require('/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/api/utils.js')
 const endpoints = require('/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/api/endpoints.js')
-// const cache = require('../cache')
 
 const App: () => React$Node = () => {
   const [drivers, setDrivers] = useState([])
@@ -86,13 +85,10 @@ const App: () => React$Node = () => {
       searchArr = searchArr.sort()
       // set searchData
       return setSearchData(searchArr)
-      // setTimeout(() => {
-      //   console.log('searchdata ', searchData)
-      // }, 100)
     }
   }
-  function test(e) {
-    console.log(e)
+  function handleClick(e) {
+    const driverObj = driverController.getDriverObj(e, cache.driversCache)
   }
   return (
     <>
@@ -111,8 +107,15 @@ const App: () => React$Node = () => {
             />
             <MySearchBar onChangeText={handleChildchangeText} value={input} />
             <View style={styles.body}>
-              <InputDropDown searchData={searchData} onPress={test} />
+              <InputDropDown searchData={searchData} onPress={handleClick} />
             </View>
+            <Image
+              style={styles.testImage}
+              source={{
+                uri: driverController.getDriverObj('lewis-hamilton', cache)
+                  .mobileImageUrl
+              }}
+            />
           </ScrollView>
         </SafeAreaView>
       </NavigationContainer>

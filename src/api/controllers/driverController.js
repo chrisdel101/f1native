@@ -46,31 +46,29 @@ exports.getRandomDriver = () => {
     return res[randomInt]
   })
 }
-// takes name of driver - check if it is valid name
-// gets drivers array from cache or api
+// takes slug - checks if it matches
 // return name_slug or false
-exports.checkDriverApi = (nameToCheck) => {
+exports.checkDriverNameIsValid = (slugToCheck) => {
   try {
-    nameToCheck = nameToCheck.toLowerCase()
+    slugToCheck = slugToCheck.toLowerCase()
     return Promise.resolve(
       module.exports.cacheAndGetDrivers(cache.driversCache, 1400)
     ).then((drivers) => {
-      // console.log('DDD', drivers)
+      // CHECK THESE
       drivers = module.exports.makeEntriesLower(drivers)
       drivers = module.exports.extractDriverNames(JSON.parse(drivers))
-      // check user input first/last names of drivers against data
+      // console.log('drivers', drivers)
+      // console.log('slug', slugToCheck)
       for (let driver of drivers) {
-        for (let key in driver) {
-          if (driver[key] === nameToCheck) {
-            // if true return driver name
-            return driver.name_slug
-          }
+        if (driver.name_slug === slugToCheck) {
+          console.log('slug okay', slugToCheck)
+          return slugToCheck
         }
       }
       return false
     })
   } catch (e) {
-    console.error('An error in checkDriverApi', e)
+    console.error('An error in checkDriverNameIsValid', e)
   }
 }
 // takes a cache obj and timeStamp
@@ -105,7 +103,7 @@ exports.cacheAndGetDrivers = (expiryTime, driversCache = {}) => {
 }
 exports.mapDriverObj = (driverSlug) => {
   if (!driverSlug) {
-    throw Error()
+    throw Error('mapDriverObj: no slug given')
   }
   try {
     return {
@@ -123,21 +121,23 @@ exports.mapDriverObj = (driverSlug) => {
   }
 }
 
-// handle caching and return driver obj - returns a promise or object
-exports.cacheAndGetDriver = (driverSlug, driverCache) => {
+// checks if slug is valid
+// checks if obj is alrady in cache and adds
+// returns obj
+exports.getDriverObj = (driverSlug, driverCache) => {
   try {
-    // console.log('cacheAndGetDriver()', driverCache)
+    console.log('getDriverObj11()', driverCache)
     // if not in cache add to cache
     if (!driverCache.hasOwnProperty(driverSlug)) {
-      // call all drivers api and check if it's there
-      return module.exports.checkDriverApi(driverSlug).then((slug) => {
+      // call drivers api and check if valid name
+      return module.exports.checkDriverNameIsValid(driverSlug).then((slug) => {
         // if driver name is valid
         if (slug) {
-          console.log('cacheAndGetDriver() - NOT FROM CACHE')
           //  add to cache
-          driverCache[driverSlug] = this.mapDriverObj(driverSlug)
-          // console.log('here', driverCache)
+          console.log('getDriverObj() - NOT FROM CACHE')
+          driverCache[driverSlug] = module.exports.mapDriverObj(driverSlug)
           // return new driver obj
+          console.log('driver Obj', driverCache)
           return driverCache[driverSlug]
         } else {
           console.log('Not a valid driver name')
@@ -146,7 +146,7 @@ exports.cacheAndGetDriver = (driverSlug, driverCache) => {
       })
       // if driver is in cache already
     } else if (driverCache.hasOwnProperty(driverSlug)) {
-      console.log('cacheAndGetDriver() - FROM CACHE')
+      console.log('getDriverObj() - FROM CACHE')
       // check if time is valid - less than 30 mins
       if (utils.verifyTimeStamp(driverCache[driverSlug].timeStamp, 30)) {
         console.log('valid time stamp')
@@ -154,7 +154,7 @@ exports.cacheAndGetDriver = (driverSlug, driverCache) => {
         return driverCache[driverSlug]
         // if not valid then re-add
       } else {
-        console.log('cacheAndGetDriver() - NOT FROM CACHE')
+        console.log('getDriverObj() - NOT FROM CACHE')
         console.log('failed time stamp')
         driverCache[driverSlug] = this.mapDriverObj(driverSlug)
         // console.log('here', driverCache)
@@ -166,6 +166,6 @@ exports.cacheAndGetDriver = (driverSlug, driverCache) => {
       return false
     }
   } catch (e) {
-    console.error('An error in driverController.cacheAndGetDriver', e)
+    console.error('An error in driverController.getDriverObj', e)
   }
 }
