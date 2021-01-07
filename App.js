@@ -8,43 +8,47 @@
 import 'react-native-gesture-handler'
 import React, {useState, useEffect} from 'react'
 import {NavigationContainer} from '@react-navigation/native'
-import {cache, testCache} from './src/api/cache'
-import {SafeAreaView, StyleSheet, ScrollView, View, Image} from 'react-native'
+import {cache} from './src/api/cache'
+import {SafeAreaView, StyleSheet, ScrollView, View} from 'react-native'
 
 import InputDropDown from '/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/components/InputDropDown.js'
 import MySearchBar from '/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/components/MySearchBar.js'
+import DriverCard from './src/components/DriverCard.js'
 import {Header} from 'react-native-elements'
+
 import driverController from './src/api/controllers/driverController'
 import teamController from './src/api/controllers/teamController.js'
 const utils = require('/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/api/utils.js')
 const endpoints = require('/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/api/endpoints.js')
 
 const App: () => React$Node = () => {
-  const [drivers, setDrivers] = useState([])
-  const [teams, setTeams] = useState('')
+  const [drivers, setDriversData] = useState([])
+  const [teams, setTeamsData] = useState('')
   const [input, setInput] = useState('')
-  const [allData, setData] = useState('')
-  const [searchData, setSearchData] = useState('')
+  const [combinedData, setCombinedData] = useState('')
+  const [dropdownDisplay, setDropdownDisplay] = useState('')
+  const [driversCardObjs, setDriverCardObjs] = useState([])
   // set state on load like componentDidMount
   const combineData = (...args) => {
     let datax = [...args].flat()
-    console.log('d', datax)
-    setData([...datax])
-    console.log('all', allData)
+    // console.log('d', datax)
+    setCombinedData([...datax])
+    console.log('combined Data on run:', combinedData)
   }
   useEffect(() => {
     ///SET STATE
     const combine = async () => {
+      // call data to fill in autocomplete
       const data1 = await driverController
-        .cacheAndGetDrivers(1400, cache.driversCache)
+        .getDriverSlugObjs(1400, cache.driversCache)
         .then((res) => {
-          setDrivers(res)
+          setDriversData(res)
           return res
         })
       const data2 = await teamController
-        .cacheAndGetTeams(1400, cache.teamsCache)
+        .getTeamSlugObjs(1400, cache.teamsCache)
         .then((res) => {
-          setTeams(res)
+          setTeamsData(res)
           return res
         })
       combineData(data1, data2)
@@ -55,7 +59,7 @@ const App: () => React$Node = () => {
     autoComplete(input)
   }, [input])
   const handleChildchangeText = (e) => {
-    console.log('e', e)
+    // console.log('e', e)
     // set input data
     setInput(e)
     resetInputState(e)
@@ -66,29 +70,38 @@ const App: () => React$Node = () => {
       setInput('')
     }
   }
-  // takes input state and saves it as searchData
+  // takes input state and saves it as dropdownDisplay
   function autoComplete(inputVal) {
-    console.log('s', inputVal)
-    if (allData.length <= 0) {return} // prettier-ignore
+    console.log('autocomplete input', inputVal)
+    // console.log('com', combinedData)
+    if (combinedData.length <= 0) {return} // prettier-ignore
     else if (!inputVal) {
       // set searchval to blank
-      return setSearchData('')
+      return setDropdownDisplay('')
     } else {
       // check if input is within drivers name
       let searchArr = []
-      allData.some((obj, i) => {
+      combinedData.some((obj, i) => {
         if (obj.name.includes(inputVal)) {
-          searchArr.push(allData[i])
+          searchArr.push(combinedData[i])
         }
       })
       // alphabetize arr
       searchArr = searchArr.sort()
-      // set searchData
-      return setSearchData(searchArr)
+      // set dropdownDisplay
+      return setDropdownDisplay(searchArr)
     }
   }
-  function handleClick(e) {
+  function handleDriverState(e) {
     const driverObj = driverController.getDriverObj(e, cache.driversCache)
+    // driverObj.then((driver) => console.log('state1', driver))
+    // console.log('STATE2', driversCardObjs)
+    setDriverCardObjs([...driversCardObjs, driverObj])
+    // setTimeout(() => {
+    // }, 100)
+  }
+  function handleClick(e) {
+    handleDriverState(e)
   }
   return (
     <>
@@ -107,15 +120,12 @@ const App: () => React$Node = () => {
             />
             <MySearchBar onChangeText={handleChildchangeText} value={input} />
             <View style={styles.body}>
-              <InputDropDown searchData={searchData} onPress={handleClick} />
+              <InputDropDown
+                searchData={dropdownDisplay}
+                onPress={handleClick}
+              />
             </View>
-            <Image
-              style={styles.testImage}
-              source={{
-                uri: driverController.getDriverObj('lewis-hamilton', cache)
-                  .mobileImageUrl
-              }}
-            />
+            {/* <DriverCard driverImage={} /> */}
           </ScrollView>
         </SafeAreaView>
       </NavigationContainer>

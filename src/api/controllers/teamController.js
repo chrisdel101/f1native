@@ -1,34 +1,29 @@
 const utils = require('../utils.js')
 const endpoints = require('../endpoints')
-const cache = require('../cache')
+const {cache} = require('../cache')
 
-exports.checkTeamApi = (nameToCheck) => {
-  // check if string is team name from api- return name_slug or false
+// check if slug is team name
+exports.checkTeamNameIsValid = (slugToCheck) => {
   try {
-    nameToCheck = nameToCheck.toLowerCase()
+    slugToCheck = slugToCheck.toLowerCase()
     return Promise.resolve(
-      module.exports.cacheAndGetTeams(cache.teamsCache, 1400)
-    ).then((teams) => {
-      teams = module.exports.makeTeamEntriesLower(teams)
-      // console.log('DDD', teams)
-      // compare entry to team names first
-      for (let team of teams) {
-        // compare against team name
-        if (team.name.includes(nameToCheck)) {
-          return team.name_slug
-        }
-      }
-      // if not match names - compare entry to team slugs second
-      for (let team of teams) {
-        // compare against team name
-        if (team.name_slug.includes(nameToCheck)) {
-          return team.name_slug
+      module.exports.getTeamSlugObjs(cache.driversCache, 1400)
+    ).then((drivers) => {
+      // CHECK THESE
+      drivers = module.exports.makeEntriesLower(drivers)
+      drivers = module.exports.extractDriverNames(JSON.parse(drivers))
+      // console.log('drivers', drivers)
+      // console.log('slug', slugToCheck)
+      for (let driver of drivers) {
+        if (driver.name_slug === slugToCheck) {
+          console.log('slug okay', slugToCheck)
+          return slugToCheck
         }
       }
       return false
     })
   } catch (e) {
-    console.error('An error in checkTeamApi', e)
+    console.error('An error in checkTeamNameIsValid', e)
   }
 }
 exports.makeTeamEntriesLower = (arr) => {
@@ -53,8 +48,8 @@ exports.getAllTeamSlugs = () => {
 
 // get array of all teams and cache it - return it
 // takes the teams cache and expiry time
-exports.cacheAndGetTeams = (expiryTime, teamsCache = {}) => {
-  console.log('cacheAndGetTeams')
+exports.getTeamSlugObjs = (expiryTime, teamsCache = {}) => {
+  // console.log('getTeamSlugObjs')
   // console.log('cache', teamsCache)
   // if not in cache OR time stamp passes fails use new call
   if (
@@ -63,16 +58,17 @@ exports.cacheAndGetTeams = (expiryTime, teamsCache = {}) => {
   ) {
     return module.exports
       .getAllTeamSlugs()
-      .then((teams) => {
-        console.log('NOT FROM CACHE')
-        teamsCache.teams_slugs = {
-          teams_slugs: teams,
+      .then((teamsSlugObj) => {
+        console.log('getTeamSlugObjs() - NOT FROM CACHE')
+        // add timeStamp
+        cache.teamsCache.teams_slugs = {
+          teams_slugs: teamsSlugObj,
           timeStamp: new Date()
         }
-        return teams
+        return teamsSlugObj
       })
       .catch((e) => {
-        console.error('An error occured in cacheAndGetTeams', e)
+        console.error('An error occured in getTeamSlugObjs', e)
       })
   } else {
     console.log('FROM CACHE')
@@ -106,7 +102,7 @@ exports.cacheAndGetTeam = (teamSlug, teamCache) => {
   // if not in cache add to cache
   if (!teamCache.hasOwnProperty(teamSlug)) {
     // call all team api and check if it's there
-    return module.exports.checkTeamApi(teamSlug).then((slug) => {
+    return module.exports.checkTeamNameIsValid(teamSlug).then((slug) => {
       // if team name is valid
       if (slug) {
         //  add to cache
