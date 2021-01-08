@@ -25,33 +25,48 @@ const App: () => React$Node = () => {
   const [drivers, setDriversData] = useState([])
   const [teams, setTeamsData] = useState('')
   const [input, setInput] = useState('')
-  const [combinedData, setCombinedData] = useState('')
+  const [combinedData, setCombinedData] = useState([])
   const [dropdownDisplay, setDropdownDisplay] = useState('')
   const [driversCardObjs, setDriverCardObjs] = useState([])
   // set state on load like componentDidMount
-  const combineData = (...args) => {
-    let datax = [...args].flat()
-    // console.log('d', datax)
-    setCombinedData([...datax])
-    console.log('combined Data on run:', combinedData)
+  const combineDataFunc = (...args) => {
+    let flat = [...args].flat()
+    setCombinedData([...flat])
+    console.log('d', flat)
+    // setTimeout(() => {
+    //   console.log('combined Data on run:', combinedData)
+    // }, 1000)
+  }
+  // add tag to each obj in arr
+  function addTags(arr, tagKey, tagValue) {
+    console.log('arr', arr)
+    if (arr.length < 0) {return} // prettier-ignore
+    return arr.map((item) => {
+      item[tagKey] = tagValue
+      return item
+    })
   }
   useEffect(() => {
     ///SET STATE
     const combine = async () => {
       // call data to fill in autocomplete
       const data1 = await driverController
-        .getDriverSlugObjs(1400, cache.driversCache)
+        .getDriverSlugObjs(1400, cache)
         .then((res) => {
+          res = addTags(res, 'type', 'driver')
           setDriversData(res)
           return res
         })
+        .catch((e) => console.error('Error fetching driver data', e))
       const data2 = await teamController
-        .getTeamSlugObjs(1400, cache.teamsCache)
+        .getTeamSlugObjs(1400, cache)
         .then((res) => {
+          res = addTags(res, 'type', 'team')
           setTeamsData(res)
           return res
         })
-      combineData(data1, data2)
+        .catch((e) => console.error('Error fetching team data', e))
+      combineDataFunc(data1, data2)
     }
     combine()
   }, [])
@@ -73,7 +88,7 @@ const App: () => React$Node = () => {
   // takes input state and saves it as dropdownDisplay
   function autoComplete(inputVal) {
     console.log('autocomplete input', inputVal)
-    // console.log('com', combinedData)
+    // console.log('combined', combinedData)
     if (combinedData.length <= 0) {return} // prettier-ignore
     else if (!inputVal) {
       // set searchval to blank
@@ -92,16 +107,41 @@ const App: () => React$Node = () => {
       return setDropdownDisplay(searchArr)
     }
   }
-  function handleDriverState(e) {
-    const driverObj = driverController.getDriverObj(e, cache.driversCache)
+  // check data for tag type - returns arr with obj inside
+  function checkObjType(slug) {
+    try {
+      return combinedData.filter((item) => {
+        if (item.name_slug === slug) {
+          return item.type
+        }
+      })
+    } catch (e) {
+      throw Error('Slug type not found', e)
+    }
+  }
+  function handleDataState(slug) {
+    const type = checkObjType(slug)[0].type
+    switch (type) {
+      case 'driver':
+        const driverObj = driverController.getDriverObj(slug, cache)
+        // console.log('obj', driverObj)
+        break
+      case 'team':
+        const teamObj = teamController.getTeamObj(slug, cache)
+        // console.log('obj', teamObj)
+        break
+      default:
+        console.error('Error in handling type state')
+    }
+    // const driverObj = driverController.getDriverObj(slug, cache.driversCache)
     // driverObj.then((driver) => console.log('state1', driver))
-    // console.log('STATE2', driversCardObjs)
-    setDriverCardObjs([...driversCardObjs, driverObj])
+    // console.log('STATE2', dr iversCardObjs)
+    // setDriverCardObjs([...driversCardObjs, driverObj])
     // setTimeout(() => {
     // }, 100)
   }
   function handleClick(e) {
-    handleDriverState(e)
+    handleDataState(e)
   }
   return (
     <>
