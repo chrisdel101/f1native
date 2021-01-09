@@ -7,11 +7,9 @@ exports.checkTeamNameIsValid = (slugToCheck, cache) => {
     slugToCheck = slugToCheck.toLowerCase()
     return Promise.resolve(module.exports.getTeamSlugObjs(1400, cache)).then(
       (teams) => {
-        console.log('teams', teams)
         teams = module.exports.makeTeamEntriesLower(teams)
         for (let team of teams) {
           if (team.name_slug === slugToCheck) {
-            console.log('slug okay', slugToCheck)
             return slugToCheck
           }
         }
@@ -25,8 +23,7 @@ exports.checkTeamNameIsValid = (slugToCheck, cache) => {
 exports.makeTeamEntriesLower = (arr) => {
   console.log('arr', arr)
   try {
-    if (typeof arr === 'string' && !Array.isArray(arr)) {
-      console.error('makeTeamEntriesLower did not recieve an array')
+    if (!arr || arr.length <= 0) {
       return
     }
     return arr.map((obj) => {
@@ -35,7 +32,6 @@ exports.makeTeamEntriesLower = (arr) => {
     })
     // re-stringify for searching later on
   } catch (e) {
-    console.error('An error in makeEntriesLower', e)
     throw Error('An error in makeEntriesLower', e)
   }
 }
@@ -54,7 +50,7 @@ exports.addToCache = (cache) => {
         slugs: teamsSlugObj,
         timeStamp: new Date()
       }
-      console.log('here', cache)
+      // console.log('here', cache)
       return cache.teamsCache.teams_slugs.slugs
     })
     .catch((e) => {
@@ -70,7 +66,9 @@ exports.getTeamSlugObjs = (expiryTime, cache) => {
   try {
     // if not in cache OR time stamp passes fails use new call
     if (!cache.teamsCache.hasOwnProperty('teams_slugs')) {
-      return module.exports.addToCache(cache).then((res) => res)
+      return module.exports.addToCache(cache).then((teamSlugsArr) => {
+        return utils.addTags(teamSlugsArr, 'type', 'team')
+      })
     } else {
       if (cache.teamsCache.hasOwnProperty('teams_slugs')) {
         if (
@@ -111,8 +109,7 @@ exports.createTeamObject = (teamSlug) => {
     console.error('An error in driverController.createDriverObject', e)
   }
 }
-// handle caching and return team obj - returns a promise or object
-// takes teamCache
+// gets team from api or cache - returns teamobj
 exports.getTeamObj = (teamSlug, cache) => {
   console.log('getTeamObj cache', cache.teamCache)
   console.log('getTeamObj slug', teamSlug)
@@ -123,9 +120,7 @@ exports.getTeamObj = (teamSlug, cache) => {
       // if team name is valid
       if (slug) {
         //  add to cache
-        console.log('cache inner', cache)
         console.log('getTeamObj() - NOT FROM CACHE')
-        console.log('cache inner', cache)
         cache.teamCache[teamSlug] = module.exports.createTeamObject(teamSlug)
         console.log('cache inner', cache)
         // return new team obj

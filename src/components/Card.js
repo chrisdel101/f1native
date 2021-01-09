@@ -1,7 +1,7 @@
 import React from 'react'
 import {Image, View, StyleSheet, Text} from 'react-native'
 
-const DriverCard = (props) => {
+const Card = (props) => {
   console.log('p', props)
   if (!props) {
     return
@@ -11,14 +11,14 @@ const DriverCard = (props) => {
       <Image
         style={styles.testImage}
         source={{
-          uri: props.driverImage
+          uri: props.stateObj.mobileImageUrl
         }}
       />
     </View>
   )
 }
 
-export default DriverCard
+export default Card
 
 const styles = StyleSheet.create({
   constainer: {

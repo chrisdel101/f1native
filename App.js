@@ -13,7 +13,7 @@ import {SafeAreaView, StyleSheet, ScrollView, View} from 'react-native'
 
 import InputDropDown from '/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/components/InputDropDown.js'
 import MySearchBar from '/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/components/MySearchBar.js'
-import DriverCard from './src/components/DriverCard.js'
+import Card from './src/components/Card.js'
 import {Header} from 'react-native-elements'
 
 import driverController from './src/api/controllers/driverController'
@@ -27,59 +27,51 @@ const App: () => React$Node = () => {
   const [input, setInput] = useState('')
   const [combinedData, setCombinedData] = useState([])
   const [dropdownDisplay, setDropdownDisplay] = useState('')
-  const [driversCardObjs, setDriverCardObjs] = useState([])
-  // set state on load like componentDidMount
-  const combineDataFunc = (...args) => {
+  const [driversCardObj, setDriverCardObj] = useState({})
+  const [teamCardObj, setTeamCardObj] = useState({})
+  const [allCardObjsArr, setAllCardObjsArr] = useState([])
+  // combine all obj into one array for searching
+  const combineData = (setterFunc, ...args) => {
     let flat = [...args].flat()
-    setCombinedData([...flat])
+    setterFunc([...flat])
     console.log('d', flat)
-    // setTimeout(() => {
-    //   console.log('combined Data on run:', combinedData)
-    // }, 1000)
-  }
-  // add tag to each obj in arr
-  function addTags(arr, tagKey, tagValue) {
-    console.log('arr', arr)
-    if (arr.length < 0) {return} // prettier-ignore
-    return arr.map((item) => {
-      item[tagKey] = tagValue
-      return item
-    })
   }
   useEffect(() => {
     ///SET STATE
-    const combine = async () => {
+    const runCombine = async () => {
       // call data to fill in autocomplete
       const data1 = await driverController
         .getDriverSlugObjs(1400, cache)
         .then((res) => {
-          res = addTags(res, 'type', 'driver')
           setDriversData(res)
           return res
         })
-        .catch((e) => console.error('Error fetching driver data', e))
+        .catch((e) => {
+          throw Error('Error fetching driver data', e)
+        })
       const data2 = await teamController
         .getTeamSlugObjs(1400, cache)
         .then((res) => {
-          res = addTags(res, 'type', 'team')
           setTeamsData(res)
           return res
         })
-        .catch((e) => console.error('Error fetching team data', e))
-      combineDataFunc(data1, data2)
+        .catch((e) => {
+          throw Error('Error fetching driver data', e)
+        })
+      combineData(setCombinedData, data1, data2)
     }
-    combine()
+    runCombine()
   }, [])
+  // second userEffect for autoComplete
   useEffect(() => {
     autoComplete(input)
   }, [input])
   const handleChildchangeText = (e) => {
-    // console.log('e', e)
     // set input data
     setInput(e)
     resetInputState(e)
-    // use input data in autoComplete
   }
+  // reset to black input
   const resetInputState = (e) => {
     if (!e) {
       setInput('')
@@ -119,29 +111,49 @@ const App: () => React$Node = () => {
       throw Error('Slug type not found', e)
     }
   }
-  function handleDataState(slug) {
+  const combineStateData = (newObj) => {
+    // check if obj is already in array
+    const check = allCardObjsArr.every((obj) => {
+      console.log('obj', obj.slug)
+      console.log('newObj', newObj.slug)
+      return obj.slug !== newObj.slug
+    })
+    if (check) {setAllCardObjsArr([...allCardObjsArr, newObj])} // prettier-ignore
+  }
+  // add clicked name objs to state
+  function addObjsToState(slug) {
     const type = checkObjType(slug)[0].type
     switch (type) {
       case 'driver':
         const driverObj = driverController.getDriverObj(slug, cache)
-        // console.log('obj', driverObj)
+        Promise.resolve(driverObj).then((res) => {
+          setDriverCardObj((prevState) => {
+            combineStateData(res)
+            return {
+              ...prevState,
+              [res.slug]: res
+            }
+          })
+        })
         break
       case 'team':
         const teamObj = teamController.getTeamObj(slug, cache)
-        // console.log('obj', teamObj)
+        Promise.resolve(teamObj).then((res) => {
+          setTeamCardObj((prevState) => {
+            combineStateData(res)
+            return {
+              ...prevState,
+              [res.slug]: res
+            }
+          })
+        })
         break
       default:
         console.error('Error in handling type state')
     }
-    // const driverObj = driverController.getDriverObj(slug, cache.driversCache)
-    // driverObj.then((driver) => console.log('state1', driver))
-    // console.log('STATE2', dr iversCardObjs)
-    // setDriverCardObjs([...driversCardObjs, driverObj])
-    // setTimeout(() => {
-    // }, 100)
   }
   function handleClick(e) {
-    handleDataState(e)
+    addObjsToState(e)
   }
   return (
     <>
@@ -165,7 +177,9 @@ const App: () => React$Node = () => {
                 onPress={handleClick}
               />
             </View>
-            {/* <DriverCard driverImage={} /> */}
+            {allCardObjsArr.map((obj, i) => {
+              return <Card stateObj={obj} key={i} />
+            })}
           </ScrollView>
         </SafeAreaView>
       </NavigationContainer>

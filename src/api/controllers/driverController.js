@@ -7,21 +7,20 @@ exports.getAllDriverSlugs = () => {
     .then((drivers) => drivers)
     .catch((e) => console.error('An error in getAllDriverSlugs', e))
 }
-// make all names lowercase
-exports.makeEntriesLower = (arr) => {
+// make all names lowercase- just in case
+exports.makeSlugsLower = (arr) => {
   try {
     if (typeof arr === 'string' && !Array.isArray(arr)) {
       arr = JSON.parse(arr)
     }
     let newArr = arr.map((obj) => {
-      obj.name = obj.name.toLowerCase()
       obj.name_slug = obj.name_slug.toLowerCase()
       return obj
     })
     // re-stringify for searching later on
     return JSON.stringify(newArr)
   } catch (e) {
-    console.error('An error in makeEntriesLower', e)
+    console.error('An error in makeSlugsLower', e)
   }
 }
 // take in drivers json and add first and last name keys
@@ -50,11 +49,11 @@ exports.checkDriverNameIsValid = (slugToCheck, cache) => {
     slugToCheck = slugToCheck.toLowerCase()
     return Promise.resolve(module.exports.getDriverSlugObjs(1400, cache)).then(
       (drivers) => {
-        // CHECK THESE
-        drivers = module.exports.makeEntriesLower(drivers)
+        // PERFORM OTHER LOGIC
+        drivers = module.exports.makeSlugsLower(drivers)
         drivers = module.exports.extractDriverNames(JSON.parse(drivers))
-        // console.log('drivers', drivers)
         // console.log('slug', slugToCheck)
+        console.log('drivers', drivers)
         for (let driver of drivers) {
           if (driver.name_slug === slugToCheck) {
             console.log('slug okay', slugToCheck)
@@ -94,7 +93,11 @@ exports.getDriverSlugObjs = (expiryTime, cache) => {
   try {
     // if not in cache add it
     if (!cache.driversCache.hasOwnProperty('driver_slugs')) {
-      return module.exports.addToCache(cache).then((res) => res)
+      console.log('getDriverSlugObjs() - NOT FROM CACHE')
+      return module.exports.addToCache(cache).then((driverSlugsArr) => {
+        // add tags
+        return utils.addTags(driverSlugsArr, 'type', 'driver')
+      })
     } else {
       if (cache.driversCache.hasOwnProperty('driver_slugs')) {
         // console.log('CHECK 2', cache.driversCache.driver_slugs)
@@ -106,10 +109,14 @@ exports.getDriverSlugObjs = (expiryTime, cache) => {
         ) {
           console.log('getDriverSlugObjs() - NOT FROM CACHE')
           console.log('time stamp failed')
-          return module.exports.addToCache(cache).then((res) => res)
+          return module.exports.addToCache(cache).then((res) => {
+            console.log('res', res)
+            return res
+          })
           // time stamp failed - re-cache
         } else {
           console.log('getDriverSlugObjs() - FROM CACHE')
+          console.log(cache.driversCache.driver_slugs.slugs)
           return cache.driversCache.driver_slugs.slugs
         }
       }
@@ -156,16 +163,22 @@ exports.getDriverObj = (driverSlug, cache) => {
             //  add to cache
             console.log('getDriverObj() - NOT FROM CACHE')
             cache.driverCache[driverSlug] = module.exports.mapDriverObj(slug)
+            console.log('getDriverObj 1', cache.driverCache[driverSlug])
             // return new driver obj
             // console.log('driver Obj', driverCache[driverSlug])
+
             return cache.driverCache[driverSlug]
           } else {
             console.log('Not a valid driver name')
             return false
           }
         })
+        .catch((e) => {
+          throw Error('Error in getDriverObj', e)
+        })
       // if driver is in cache already
     } else if (cache.driverCache.hasOwnProperty(driverSlug)) {
+      console.log('getDriverObj 2')
       // check if time is valid - less than 30 mins
       if (utils.verifyTimeStamp(cache.driverCache[driverSlug].timeStamp, 30)) {
         console.log('getDriverObj() - FROM CACHE')

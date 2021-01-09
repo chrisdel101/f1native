@@ -19,3 +19,12 @@ exports.httpReq = (url) => {
       return data
     })
 }
+// take arr and add tag to each obj inside
+exports.addTags = (arr, tagKey, tagValue) => {
+  console.log('arr', arr)
+  if (arr.length <= 0) {return} // prettier-ignore
+  return arr.map((item) => {
+    item[tagKey] = tagValue
+    return item
+  })
+}
