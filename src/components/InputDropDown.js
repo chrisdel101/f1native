@@ -2,9 +2,6 @@ import React from 'react'
 import {StyleSheet, Text, TouchableOpacity} from 'react-native'
 
 const InputDropDown: (props) => React$Node = (props) => {
-  function test() {
-    console.log('test')
-  }
   return (
     <TouchableOpacity>
       {!props.searchData
@@ -26,6 +23,7 @@ export default InputDropDown
 
 const styles = StyleSheet.create({
   itemText: {
+    color: '#F8F8F8',
     padding: 16
   }
 })

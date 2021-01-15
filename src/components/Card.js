@@ -2,14 +2,13 @@ import React from 'react'
 import {Image, View, StyleSheet, Text} from 'react-native'
 
 const Card = (props) => {
-  console.log('p', props)
   if (!props) {
     return
   }
   return (
     <View style={styles.container}>
       <Image
-        style={styles.testImage}
+        style={styles.image}
         source={{
           uri: props.stateObj.mobileImageUrl
         }}
@@ -21,13 +20,12 @@ const Card = (props) => {
 export default Card
 
 const styles = StyleSheet.create({
-  constainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center'
+  container: {
+    height: 700
+    // backgroundColor: 'yellow'
   },
-  testImage: {
-    width: '100%',
-    height: 200
+  image: {
+    // height: '100%'
+    height: 700
   }
 })

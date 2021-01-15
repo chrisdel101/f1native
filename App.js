@@ -9,7 +9,14 @@ import 'react-native-gesture-handler'
 import React, {useState, useEffect} from 'react'
 import {NavigationContainer} from '@react-navigation/native'
 import {cache} from './src/api/cache'
-import {SafeAreaView, StyleSheet, ScrollView, View} from 'react-native'
+import {
+  Text,
+  SafeAreaView,
+  StyleSheet,
+  ScrollView,
+  View,
+  Dimensions
+} from 'react-native'
 
 import InputDropDown from '/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/components/InputDropDown.js'
 import MySearchBar from '/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/components/MySearchBar.js'
@@ -20,6 +27,9 @@ import driverController from './src/api/controllers/driverController'
 import teamController from './src/api/controllers/teamController.js'
 const utils = require('/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/api/utils.js')
 const endpoints = require('/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/api/endpoints.js')
+import {LogBox} from 'react-native'
+LogBox.ignoreLogs(['Warning: ...']) // Ignore log notification by message
+LogBox.ignoreAllLogs() //Ignore all log notifications
 
 const App: () => React$Node = () => {
   const [drivers, setDriversData] = useState([])
@@ -29,13 +39,37 @@ const App: () => React$Node = () => {
   const [dropdownDisplay, setDropdownDisplay] = useState('')
   const [driversCardObj, setDriverCardObj] = useState({})
   const [teamCardObj, setTeamCardObj] = useState({})
-  const [allCardObjsArr, setAllCardObjsArr] = useState([])
-  // combine all obj into one array for searching
-  const combineData = (setterFunc, ...args) => {
-    let flat = [...args].flat()
-    setterFunc([...flat])
-    console.log('d', flat)
-  }
+  const [base64state, setBase64State] = useState({})
+  const [allCardObjsArr, setAllCardObjsArr] = useState([
+    // {
+    //   slug: 'romain-grosjean',
+    //   mobileImageUrl:
+    //     'https://f1-cards.herokuapp.com/api/mobile/driver/romain-grosjean',
+    //   imageUrl: 'https://f1-cards.herokuapp.com/api/driver/romain-grosjean',
+    //   timeStamp: Date.now()
+    // }
+    // {
+    //   slug: 'romain-grosjean',
+    //   mobileImageUrl:
+    //     'https://f1-cards.herokuapp.com/api/mobile/driver/romain-grosjean',
+    //   imageUrl: 'https://f1-cards.herokuapp.com/api/driver/romain-grosjean',
+    //   timeStamp: Date.now()
+    // },
+    // {
+    //   slug: 'romain-grosjean',
+    //   mobileImageUrl:
+    //     'https://f1-cards.herokuapp.com/api/mobile/driver/romain-grosjean',
+    //   imageUrl: 'https://f1-cards.herokuapp.com/api/driver/romain-grosjean',
+    //   timeStamp: Date.now()
+    // }
+    // {
+    //   slug: 'valtteri-bottas',
+    //   mobileImageUrl:
+    //     'https://f1-cards.herokuapp.com/api/mobile/driver/valtteri-bottas',
+    //   imageUrl: 'https://f1-cards.herokuapp.com/api/driver/valtteri-bottas',
+    //   timeStamp: Date.now()
+    // }
+  ])
   useEffect(() => {
     ///SET STATE
     const runCombine = async () => {
@@ -72,9 +106,79 @@ const App: () => React$Node = () => {
     resetInputState(e)
   }
   // reset to black input
+  // combine all obj into one array for searching
+  const combineData = (setterFunc, ...args) => {
+    let flat = [...args].flat()
+    setterFunc([...flat])
+    console.log('d', flat)
+  }
   const resetInputState = (e) => {
     if (!e) {
       setInput('')
+    }
+  }
+  function isEmpty(obj) {
+    return Object.keys(obj).length === 0 && obj.constructor === Object
+  }
+  async function addCardObjToState(urlObj) {
+    console.log('state', base64state)
+    if (urlObj) {
+      try {
+        // check if obj is in state already
+        if (base64state && base64state.hasOwnProperty(urlObj.slug)) {
+          console.log('exists')
+          return
+        }
+        // get base64 string
+        console.log('hello')
+        let base64 = await convertToBase64(urlObj)
+        console.log('goodbye')
+        if (base64state && !base64state.hasOwnProperty(urlObj.slug)) {
+          setBase64State((prevState) => {
+            // check that base64state is not empty
+            console.log('added')
+            return {
+              ...prevState,
+              [urlObj.slug]: base64
+            }
+          })
+        } else {
+          console.log('not added')
+        }
+      } catch (e) {
+        throw Error('Error in addCardObjToState', e)
+      }
+    } else {
+      console.error('urlObj not defined in addCardObjToState')
+    }
+  }
+  async function convertToBase64(urlObj) {
+    console.log('obj', urlObj)
+    console.log('obj', urlObj.slug)
+    // console.log('obj', !Object.keys(urlObj).length === 0)
+    // console.log('obj', urlObj.constructor === Object)
+    if (urlObj && urlObj.hasOwnProperty('mobileImageUrl')) {
+      const url = urlObj.mobileImageUrl
+      try {
+        return new Promise(async (resolve, reject) => {
+          var reader = new window.FileReader()
+          let blob = await fetch(url).then((r) => r.blob())
+          reader.readAsDataURL(blob)
+          reader.onloadend = function () {
+            var base64data = reader.result
+            if (!base64data) {
+              return reject(
+                console.error('Promise is rejected in convertToBase64')
+              )
+            }
+            resolve(base64data)
+          }
+        })
+      } catch (e) {
+        throw Error('An error in convertToBase64', e)
+      }
+    } else {
+      console.error('Error with urlObj.hasOwnPropery mobileImageUrl')
     }
   }
   // takes input state and saves it as dropdownDisplay
@@ -128,7 +232,10 @@ const App: () => React$Node = () => {
         const driverObj = driverController.getDriverObj(slug, cache)
         Promise.resolve(driverObj).then((res) => {
           setDriverCardObj((prevState) => {
+            // combine current res with previous state
             combineStateData(res)
+            // console.log('res', res)
+            addCardObjToState(res)
             return {
               ...prevState,
               [res.slug]: res
@@ -156,59 +263,77 @@ const App: () => React$Node = () => {
     addObjsToState(e)
   }
   return (
-    <>
-      <NavigationContainer>
-        <SafeAreaView>
-          <ScrollView
-            contentInsetAdjustmentBehavior="automatic"
-            style={styles.scrollView}>
-            <Header
-              leftComponent={{icon: 'menu', color: '#fff'}}
-              centerComponent={{
-                text: 'FORMULA 1 CARDS',
-                style: {color: '#fff'}
-              }}
-              rightComponent={{icon: 'home', color: '#fff'}}
-            />
-            <MySearchBar onChangeText={handleChildchangeText} value={input} />
-            <View style={styles.body}>
-              <InputDropDown
-                searchData={dropdownDisplay}
-                onPress={handleClick}
-              />
-            </View>
+    <SafeAreaView style={{height: 1000}}>
+      <Header
+        leftComponent={{icon: 'menu', color: '#fff'}}
+        centerComponent={{
+          text: 'FORMULA 1 CARDS',
+          style: {color: '#fff'}
+        }}
+        rightComponent={{icon: 'home', color: '#fff'}}
+      />
+      <MySearchBar onChangeText={handleChildchangeText} value={input} />
+      <ScrollView>
+        {/* {[...new Array(100)].map((item, i) => {
+          return <Text key={i}>Hello</Text>
+        })} */}
+        <View style={styles.cardsContainer}>
+          {allCardObjsArr.map((obj, i) => {
+            return <Card stateObj={obj} key={i} />
+          })}
+        </View>
+        <Text>There</Text>
+      </ScrollView>
+      <View style={styles.dropDownContainer}>
+        <InputDropDown searchData={dropdownDisplay} onPress={handleClick} />
+      </View>
+      <View style={styles.scrollWrapper}>
+        <ScrollView
+          contentInsetAdjustmentBehavior="automatic"
+          style={styles.scrollView}>
+          {/* {[...new Array(10)].map((item, i) => {
+            return <Text key={i}>Hello</Text>
+          })} */}
+          {/* <View style={styles.cardsContainer}>
             {allCardObjsArr.map((obj, i) => {
               return <Card stateObj={obj} key={i} />
             })}
-          </ScrollView>
-        </SafeAreaView>
-      </NavigationContainer>
-    </>
+          </View> */}
+        </ScrollView>
+      </View>
+    </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
+  scrollWrapper: {
+    flex: 1
+  },
   scrollView: {
-    backgroundColor: 'white'
+    backgroundColor: 'white',
+    display: 'flex',
+    flexDirection: 'column',
+    height: '100%',
+    flexGrow: 1
+    // position: 'relative'
   },
-  engine: {
-    position: 'absolute',
-    right: 0
-  },
-  body: {
-    backgroundColor: 'white'
+  dropDownContainer: {
+    backgroundColor: 'rgba(72,72,72, 0.4)',
+    zIndex: 3
   },
   sectionContainer: {
     marginTop: 32,
     paddingHorizontal: 24
   },
-  highlight: {
-    fontWeight: '700'
-  },
-
-  testImage: {
+  cardsContainer: {
+    zIndex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'absolute',
+    left: 0,
+    right: 0,
     width: '100%',
-    height: 200
+    height: '100%'
   }
 })
 
