@@ -34,20 +34,18 @@ LogBox.ignoreAllLogs() //Ignore all log notifications
 const App: () => React$Node = () => {
   const [drivers, setDriversData] = useState([])
   const [teams, setTeamsData] = useState('')
+  // from search bar
   const [input, setInput] = useState('')
+  // data to search for drop down
   const [combinedData, setCombinedData] = useState([])
   const [dropdownDisplay, setDropdownDisplay] = useState('')
   const [driversCardObj, setDriverCardObj] = useState({})
   const [teamCardObj, setTeamCardObj] = useState({})
   const [base64state, setBase64State] = useState({})
+  // track which every last obj clicked
+  const [currentSelectionObj, setCurrentSelectionObj] = useState('')
+  // array being displayed
   const [allCardObjsArr, setAllCardObjsArr] = useState([
-    // {
-    //   slug: 'romain-grosjean',
-    //   mobileImageUrl:
-    //     'https://f1-cards.herokuapp.com/api/mobile/driver/romain-grosjean',
-    //   imageUrl: 'https://f1-cards.herokuapp.com/api/driver/romain-grosjean',
-    //   timeStamp: Date.now()
-    // }
     // {
     //   slug: 'romain-grosjean',
     //   mobileImageUrl:
@@ -56,10 +54,22 @@ const App: () => React$Node = () => {
     //   timeStamp: Date.now()
     // },
     // {
-    //   slug: 'romain-grosjean',
+    //   slug: 'lewis-hamilton',
     //   mobileImageUrl:
-    //     'https://f1-cards.herokuapp.com/api/mobile/driver/romain-grosjean',
-    //   imageUrl: 'https://f1-cards.herokuapp.com/api/driver/romain-grosjean',
+    //     'https://f1-cards.herokuapp.com/api/mobile/driver/valtteri-bottas',
+    //   imageUrl: 'https://f1-cards.herokuapp.com/api/driver/lewis-hamilton',
+    //   timeStamp: Date.now()
+    // },
+    // {
+    //   slug: 'lewis-hamilton',
+    //   mobileImageUrl: 'https://place-puppy.com/500x702',
+    //   imageUrl: 'https://f1-cards.herokuapp.com/api/driver/lewis-hamilton',
+    //   timeStamp: Date.now()
+    // },
+    // {
+    //   slug: 'lewis-hamilton',
+    //   mobileImageUrl: 'https://place-puppy.com/500x703',
+    //   imageUrl: 'https://f1-cards.herokuapp.com/api/driver/lewis-hamilton',
     //   timeStamp: Date.now()
     // }
     // {
@@ -100,6 +110,9 @@ const App: () => React$Node = () => {
   useEffect(() => {
     autoComplete(input)
   }, [input])
+  useEffect(() => {
+    addBase64State(currentSelectionObj)
+  }, [currentSelectionObj])
   const handleChildchangeText = (e) => {
     // set input data
     setInput(e)
@@ -117,20 +130,17 @@ const App: () => React$Node = () => {
       setInput('')
     }
   }
-  function isEmpty(obj) {
-    return Object.keys(obj).length === 0 && obj.constructor === Object
-  }
-  async function addCardObjToState(urlObj) {
+  // RESTRUCTURE
+  async function addBase64State(urlObj) {
     console.log('state', base64state)
     if (urlObj) {
       try {
         // check if obj is in state already
         if (base64state && base64state.hasOwnProperty(urlObj.slug)) {
-          console.log('exists')
+          console.log('exists aleady')
           return
         }
         // get base64 string
-        console.log('hello')
         let base64 = await convertToBase64(urlObj)
         console.log('goodbye')
         if (base64state && !base64state.hasOwnProperty(urlObj.slug)) {
@@ -146,17 +156,13 @@ const App: () => React$Node = () => {
           console.log('not added')
         }
       } catch (e) {
-        throw Error('Error in addCardObjToState', e)
+        throw Error('Error in addBase64State', e)
       }
     } else {
-      console.error('urlObj not defined in addCardObjToState')
+      console.error('urlObj not defined in addBase64State')
     }
   }
   async function convertToBase64(urlObj) {
-    console.log('obj', urlObj)
-    console.log('obj', urlObj.slug)
-    // console.log('obj', !Object.keys(urlObj).length === 0)
-    // console.log('obj', urlObj.constructor === Object)
     if (urlObj && urlObj.hasOwnProperty('mobileImageUrl')) {
       const url = urlObj.mobileImageUrl
       try {
@@ -227,6 +233,7 @@ const App: () => React$Node = () => {
   // add clicked name objs to state
   function addObjsToState(slug) {
     const type = checkObjType(slug)[0].type
+    // call controllersand get driver urls from api
     switch (type) {
       case 'driver':
         const driverObj = driverController.getDriverObj(slug, cache)
@@ -234,8 +241,8 @@ const App: () => React$Node = () => {
           setDriverCardObj((prevState) => {
             // combine current res with previous state
             combineStateData(res)
-            // console.log('res', res)
-            addCardObjToState(res)
+            console.log('res', res)
+            setCurrentSelectionObj(res)
             return {
               ...prevState,
               [res.slug]: res
@@ -248,6 +255,7 @@ const App: () => React$Node = () => {
         Promise.resolve(teamObj).then((res) => {
           setTeamCardObj((prevState) => {
             combineStateData(res)
+            setCurrentSelectionObj(res)
             return {
               ...prevState,
               [res.slug]: res
@@ -263,7 +271,7 @@ const App: () => React$Node = () => {
     addObjsToState(e)
   }
   return (
-    <SafeAreaView style={{height: 1000}}>
+    <SafeAreaView style={styles.scrollWrapper}>
       <Header
         leftComponent={{icon: 'menu', color: '#fff'}}
         centerComponent={{
@@ -273,41 +281,24 @@ const App: () => React$Node = () => {
         rightComponent={{icon: 'home', color: '#fff'}}
       />
       <MySearchBar onChangeText={handleChildchangeText} value={input} />
+      <View style={styles.dropDownContainer}>
+        <InputDropDown searchData={dropdownDisplay} onPress={handleClick} />
+      </View>
       <ScrollView>
-        {/* {[...new Array(100)].map((item, i) => {
-          return <Text key={i}>Hello</Text>
-        })} */}
-        <View style={styles.cardsContainer}>
+        <View style={styles.scrollView}>
           {allCardObjsArr.map((obj, i) => {
             return <Card stateObj={obj} key={i} />
           })}
         </View>
-        <Text>There</Text>
       </ScrollView>
-      <View style={styles.dropDownContainer}>
-        <InputDropDown searchData={dropdownDisplay} onPress={handleClick} />
-      </View>
-      <View style={styles.scrollWrapper}>
-        <ScrollView
-          contentInsetAdjustmentBehavior="automatic"
-          style={styles.scrollView}>
-          {/* {[...new Array(10)].map((item, i) => {
-            return <Text key={i}>Hello</Text>
-          })} */}
-          {/* <View style={styles.cardsContainer}>
-            {allCardObjsArr.map((obj, i) => {
-              return <Card stateObj={obj} key={i} />
-            })}
-          </View> */}
-        </ScrollView>
-      </View>
     </SafeAreaView>
   )
 }
 
 const styles = StyleSheet.create({
   scrollWrapper: {
-    flex: 1
+    flex: 1,
+    height: 'auto'
   },
   scrollView: {
     backgroundColor: 'white',
