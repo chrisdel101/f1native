@@ -284,8 +284,8 @@ const App: () => React$Node = () => {
       <View style={styles.dropDownContainer}>
         <InputDropDown searchData={dropdownDisplay} onPress={handleClick} />
       </View>
-      <ScrollView>
-        <View style={styles.scrollView}>
+      <ScrollView style={styles.scrollView}>
+        <View style={styles.cardsContainer}>
           {allCardObjsArr.map((obj, i) => {
             return <Card stateObj={obj} key={i} />
           })}
@@ -300,29 +300,27 @@ const styles = StyleSheet.create({
     flex: 1,
     height: 'auto'
   },
-  scrollView: {
+  cardsContainer: {
     backgroundColor: 'white',
     display: 'flex',
     flexDirection: 'column',
     height: '100%',
     flexGrow: 1
-    // position: 'relative'
   },
   dropDownContainer: {
-    backgroundColor: 'rgba(72,72,72, 0.4)',
+    backgroundColor: 'rgba(5,5,5, 0.7)',
     zIndex: 3
   },
   sectionContainer: {
     marginTop: 32,
     paddingHorizontal: 24
   },
-  cardsContainer: {
+  scrollView: {
     zIndex: 1,
     display: 'flex',
     flexDirection: 'column',
     position: 'absolute',
-    left: 0,
-    right: 0,
+    top: 210,
     width: '100%',
     height: '100%'
   }
