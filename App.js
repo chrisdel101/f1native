@@ -7,15 +7,13 @@
  */
 import 'react-native-gesture-handler'
 import React, {useState, useEffect} from 'react'
-import {NavigationContainer} from '@react-navigation/native'
 import {cache} from './src/api/cache'
 import {
-  Text,
   SafeAreaView,
   StyleSheet,
   ScrollView,
   View,
-  Dimensions
+  FlatList
 } from 'react-native'
 
 import InputDropDown from '/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/components/InputDropDown.js'
@@ -25,9 +23,9 @@ import {Header} from 'react-native-elements'
 
 import driverController from './src/api/controllers/driverController'
 import teamController from './src/api/controllers/teamController.js'
-const utils = require('/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/api/utils.js')
-const endpoints = require('/Users/chrisdielschnieder/desktop/code_work/formula1/f1Native/src/api/endpoints.js')
+import DraggableFlatList from 'react-native-draggable-flatlist'
 import {LogBox} from 'react-native'
+import {FlatList} from 'react-native-gesture-handler'
 LogBox.ignoreLogs(['Warning: ...']) // Ignore log notification by message
 LogBox.ignoreAllLogs() //Ignore all log notifications
 
@@ -45,7 +43,7 @@ const App: () => React$Node = () => {
   // track which every last obj clicked
   const [currentSelectionObj, setCurrentSelectionObj] = useState('')
   // array being displayed
-  const [allCardObjsArr, setAllCardObjsArr] = useState([
+  const [cardsToRender, setCardsToRender] = useState([
     // {
     //   slug: 'romain-grosjean',
     //   mobileImageUrl:
@@ -53,25 +51,24 @@ const App: () => React$Node = () => {
     //   imageUrl: 'https://f1-cards.herokuapp.com/api/driver/romain-grosjean',
     //   timeStamp: Date.now()
     // },
-    // {
-    //   slug: 'lewis-hamilton',
-    //   mobileImageUrl:
-    //     'https://f1-cards.herokuapp.com/api/mobile/driver/valtteri-bottas',
-    //   imageUrl: 'https://f1-cards.herokuapp.com/api/driver/lewis-hamilton',
-    //   timeStamp: Date.now()
-    // },
-    // {
-    //   slug: 'lewis-hamilton',
-    //   mobileImageUrl: 'https://place-puppy.com/500x702',
-    //   imageUrl: 'https://f1-cards.herokuapp.com/api/driver/lewis-hamilton',
-    //   timeStamp: Date.now()
-    // },
-    // {
-    //   slug: 'lewis-hamilton',
-    //   mobileImageUrl: 'https://place-puppy.com/500x703',
-    //   imageUrl: 'https://f1-cards.herokuapp.com/api/driver/lewis-hamilton',
-    //   timeStamp: Date.now()
-    // }
+    {
+      slug: 'lewis-hamilton',
+      mobileImageUrl: 'https://place-puppy.com/500x701',
+      imageUrl: 'https://f1-cards.herokuapp.com/api/driver/lewis-hamilton',
+      timeStamp: Date.now()
+    },
+    {
+      slug: 'lewis-hamilton',
+      mobileImageUrl: 'https://place-puppy.com/500x702',
+      imageUrl: 'https://f1-cards.herokuapp.com/api/driver/lewis-hamilton',
+      timeStamp: Date.now()
+    },
+    {
+      slug: 'lewis-hamilton',
+      mobileImageUrl: 'https://place-puppy.com/500x703',
+      imageUrl: 'https://f1-cards.herokuapp.com/api/driver/lewis-hamilton',
+      timeStamp: Date.now()
+    }
     // {
     //   slug: 'valtteri-bottas',
     //   mobileImageUrl:
@@ -132,34 +129,26 @@ const App: () => React$Node = () => {
   }
   // RESTRUCTURE
   async function addBase64State(urlObj) {
-    console.log('state', base64state)
-    if (urlObj) {
-      try {
-        // check if obj is in state already
-        if (base64state && base64state.hasOwnProperty(urlObj.slug)) {
-          console.log('exists aleady')
-          return
-        }
-        // get base64 string
-        let base64 = await convertToBase64(urlObj)
-        console.log('goodbye')
-        if (base64state && !base64state.hasOwnProperty(urlObj.slug)) {
-          setBase64State((prevState) => {
-            // check that base64state is not empty
-            console.log('added')
-            return {
-              ...prevState,
-              [urlObj.slug]: base64
-            }
-          })
-        } else {
-          console.log('not added')
-        }
-      } catch (e) {
-        throw Error('Error in addBase64State', e)
+    // console.log('state', base64state)
+    if (!urlObj) {return} // prettier-ignore
+    try {
+      // check if obj is in state already
+      if (base64state && base64state.hasOwnProperty(urlObj.slug)) {
+        console.log('exists aleady')
+        return
       }
-    } else {
-      console.error('urlObj not defined in addBase64State')
+      // get base64 string
+      let base64 = await convertToBase64(urlObj)
+      setBase64State((prevState) => {
+        // check that base64state is not empty
+        console.log('Base64 added')
+        return {
+          ...prevState,
+          [urlObj.slug]: base64
+        }
+      })
+    } catch (e) {
+      throw Error('Error in addBase64State', e)
     }
   }
   async function convertToBase64(urlObj) {
@@ -221,14 +210,14 @@ const App: () => React$Node = () => {
       throw Error('Slug type not found', e)
     }
   }
-  const combineStateData = (newObj) => {
+  // add to array to render
+  const combineDataToRender = (newObj) => {
     // check if obj is already in array
-    const check = allCardObjsArr.every((obj) => {
-      console.log('obj', obj.slug)
-      console.log('newObj', newObj.slug)
+    const notInArray = cardsToRender.every((obj) => {
+      // check current obj does not equal any existing
       return obj.slug !== newObj.slug
     })
-    if (check) {setAllCardObjsArr([...allCardObjsArr, newObj])} // prettier-ignore
+    if (notInArray) {setCardsToRender([newObj, ...cardsToRender])} // prettier-ignore
   }
   // add clicked name objs to state
   function addObjsToState(slug) {
@@ -240,7 +229,7 @@ const App: () => React$Node = () => {
         Promise.resolve(driverObj).then((res) => {
           setDriverCardObj((prevState) => {
             // combine current res with previous state
-            combineStateData(res)
+            combineDataToRender(res)
             console.log('res', res)
             setCurrentSelectionObj(res)
             return {
@@ -254,7 +243,7 @@ const App: () => React$Node = () => {
         const teamObj = teamController.getTeamObj(slug, cache)
         Promise.resolve(teamObj).then((res) => {
           setTeamCardObj((prevState) => {
-            combineStateData(res)
+            combineDataToRender(res)
             setCurrentSelectionObj(res)
             return {
               ...prevState,
@@ -267,8 +256,20 @@ const App: () => React$Node = () => {
         console.error('Error in handling type state')
     }
   }
+  function deleteCard(indexToRemove) {
+    if (!cardsToRender || cardsToRender.length <= 0) {return} // prettier-ignore
+    let copy = Array.from(cardsToRender)
+    copy = [...copy.slice(0, indexToRemove), ...copy.slice(indexToRemove + 1)]
+    console.log('delete', copy)
+    setCardsToRender(copy)
+  }
   function handleClick(e) {
-    addObjsToState(e)
+    if (e === undefined || e === null) {return} // prettier-ignore
+    if (typeof e === 'string') {
+      addObjsToState(e)
+    } else if (typeof e === 'number') {
+      deleteCard(e)
+    }
   }
   return (
     <SafeAreaView style={styles.scrollWrapper}>
@@ -286,9 +287,12 @@ const App: () => React$Node = () => {
       </View>
       <ScrollView style={styles.scrollView}>
         <View style={styles.cardsContainer}>
-          {allCardObjsArr.map((obj, i) => {
-            return <Card stateObj={obj} key={i} />
-          })}
+          <FlatList></FlatList>
+          {/* {cardsToRender.map((obj, i) => {
+            return (
+              <Card stateObj={obj} key={i} index={i} onPress={handleClick} />
+            )
+          })} */}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -301,11 +305,11 @@ const styles = StyleSheet.create({
     height: 'auto'
   },
   cardsContainer: {
-    backgroundColor: 'white',
-    display: 'flex',
-    flexDirection: 'column',
-    height: '100%',
-    flexGrow: 1
+    // backgroundColor: 'white',
+    // display: 'flex',
+    // flexDirection: 'column',
+    // height: '100%',
+    // flexGrow: 1
   },
   dropDownContainer: {
     backgroundColor: 'rgba(5,5,5, 0.7)',
@@ -317,8 +321,6 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     zIndex: 1,
-    display: 'flex',
-    flexDirection: 'column',
     position: 'absolute',
     top: 210,
     width: '100%',
