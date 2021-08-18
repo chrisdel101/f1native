@@ -2,6 +2,7 @@ import React from 'react'
 import {Image, View, StyleSheet, Text} from 'react-native'
 
 const Card = (props) => {
+  console.log('p', props)
   if (!props) {
     return
   }
@@ -11,14 +12,14 @@ const Card = (props) => {
         <View styles={styles.closerContainer}>
           <Text
             style={styles.closer}
-            onPress={() => props.onPress(props.index)}>
+            onPress={() => props.onPress(props.stateObj.index)}>
             X
           </Text>
         </View>
         <Image
           style={styles.image}
           source={{
-            uri: props.stateObj.mobileImageUrl
+            uri: props.stateObj.item.mobileImageUrl
           }}
         />
       </View>
@@ -43,14 +44,15 @@ const styles = StyleSheet.create({
     textAlign: 'center'
   },
   cardContainer: {
-    height: 700,
-    margin: 20
+    height: 200,
+    margin: 100
   },
   card: {
     borderColor: 'black',
     borderWidth: 1
   },
   image: {
-    height: 700
+    height: '100%',
+    width: '100%'
   }
 })
