@@ -29,10 +29,8 @@ LogBox.ignoreAllLogs() //Ignore all log notifications
 
 const App: () => React$Node = () => {
   const [drivers, setDriversData] = useState([])
-  const [teams, setTeamsData] = useState('')
-  // from search bar
+  const [teams, setTeamsData] = useState('') // from search bar
   const [input, setInput] = useState('')
-  // data to search for drop down
   const [combinedData, setCombinedData] = useState([])
   const [dropdownDisplay, setDropdownDisplay] = useState('')
   const [driversCardObj, setDriverCardObj] = useState({})
@@ -201,67 +199,54 @@ const App: () => React$Node = () => {
   //     return setDropdownDisplay(searchArr)
   //   }
   // }
-  // // check data for tag type - returns arr with obj inside
-  // function checkObjType(slug) {
-  //   try {
-  //     return combinedData.filter((item) => {
-  //       if (item.name_slug === slug) {
-  //         return item.type
-  //       }
-  //     })
-  //   } catch (e) {
-  //     throw Error('Slug type not found', e)
-  //   }
-  // }
-  // // add to array to render
-  // const combineDataToRender = (newObj) => {
-  //   // check if obj is already in array
-  //   const notInArray = cardsToRender.every((obj) => {
-  //     // check current obj does not equal any existing
-  //     console.log('HERE')
-  //     return obj.slug !== newObj.slug
-  //   })
-  //   if (notInArray) {
-  //     setCardsToRender([newObj, ...cardsToRender])
-  //   }
-  // }
-  // // add clicked name objs to state
-  // function addObjsToState(slug) {
-  //   const type = checkObjType(slug)[0].type
-  //   // call controllersand get driver urls from api
-  //   switch (type) {
-  //     case 'driver':
-  //       const driverObj = driverController.getDriverObj(slug, cache)
-  //       Promise.resolve(driverObj).then((res) => {
-  //         setDriverCardObj((prevState) => {
-  //           // combine current res with previous state
-  //           combineDataToRender(res)
-  //           console.log('res', res)
-  //           setCurrentSelectionObj(res)
-  //           return {
-  //             ...prevState,
-  //             [res.slug]: res
-  //           }
-  //         })
-  //       })
-  //       break
-  //     case 'team':
-  //       const teamObj = teamController.getTeamObj(slug, cache)
-  //       Promise.resolve(teamObj).then((res) => {
-  //         setTeamCardObj((prevState) => {
-  //           combineDataToRender(res)
-  //           setCurrentSelectionObj(res)
-  //           return {
-  //             ...prevState,
-  //             [res.slug]: res
-  //           }
-  //         })
-  //       })
-  //       break
-  //     default:
-  //       console.error('Error in handling type state')
-  //   }
-  // }
+  // add to array to render
+  const combineDataToRender = (newObj) => {
+    // check if obj is already in array
+    const notInArray = cardsToRender.every((obj) => {
+      // check current obj does not equal any existing
+      return obj.slug !== newObj.slug
+    })
+    if (notInArray) {
+      setCardsToRender([newObj, ...cardsToRender])
+    }
+  }
+  // add clicked name objs to state
+  function addObjToState(obj) {
+    // const type = checkObjType(slug)[0].type
+    // call controllersand get driver urls from api
+    switch (obj.type) {
+      case 'driver':
+        const driverObj = driverController.getDriverObj(obj.name_slug, cache)
+        Promise.resolve(driverObj).then((res) => {
+          setDriverCardObj((prevState) => {
+            // combine current res with previous state
+            combineDataToRender(res)
+            console.log('res', res)
+            setCurrentSelectionObj(res)
+            return {
+              ...prevState,
+              [res.slug]: res
+            }
+          })
+        })
+        break
+      case 'team':
+        const teamObj = teamController.getTeamObj(obj.name_slug, cache)
+        Promise.resolve(teamObj).then((res) => {
+          setTeamCardObj((prevState) => {
+            combineDataToRender(res)
+            setCurrentSelectionObj(res)
+            return {
+              ...prevState,
+              [res.slug]: res
+            }
+          })
+        })
+        break
+      default:
+        console.error('Error in handling type state')
+    }
+  }
   // function deleteCard(indexToRemove) {
   //   if (!cardsToRender || cardsToRender.length <= 0) {return} // prettier-ignore
   //   let copy = Array.from(cardsToRender)
@@ -272,7 +257,7 @@ const App: () => React$Node = () => {
   // function handleClick(e) {
   //   if (e === undefined || e === null) {return} // prettier-ignore
   //   if (typeof e === 'string') {
-  //     addObjsToState(e)
+  //     addObjToState(e)
   //   } else if (typeof e === 'number') {
   //     deleteCard(e)
   //   }
@@ -299,18 +284,25 @@ const App: () => React$Node = () => {
         .catch((e) => {
           throw Error('Error fetching driver data', e)
         })
-      combineData(setCombinedData, data1, data2)
+
+      Promise.all([data1, data2]).then((values) => {
+        let mainArr = data1.concat(data2)
+        setCombinedData(mainArr)
+        setTimeout(() => {
+          mainArr.map((item) => {
+            console.log('item', item)
+            console.log('type', addObjToState(item))
+            // addObjToState(item.name_slug)
+          }, 100)
+        })
+      })
     }
     runCombine()
-
-    // setCardsToRender(combineData)
-    // console.log('combined', combineData)
   }, [])
   // combine all obj into one array for searching
   const combineData = (setterFunc, ...args) => {
     let flat = [...args].flat()
     setterFunc([...flat])
-    // console.log('d', flat)
   }
   return (
     <SafeAreaView style={styles.scrollWrapper}>
@@ -328,12 +320,12 @@ const App: () => React$Node = () => {
         <InputDropDown searchData={dropdownDisplay} onPress={handleClick} />
       </View> */}
       <ScrollView contentContainerStyle={styles.scrollView}>
-        {combinedData.map((card) => {
+        {cardsToRender.map((card) => {
           return (
             <Image
               style={styles.card}
               source={{
-                uri: `https://f1-cards.herokuapp.com/api/mobile/driver/${card.name_slug}`
+                uri: card.mobileImageUrl
               }}
             />
           )
