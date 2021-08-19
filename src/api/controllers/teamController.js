@@ -122,7 +122,6 @@ exports.getTeamObj = (teamSlug, cache) => {
         //  add to cache
         console.log('getTeamObj() - NOT FROM CACHE')
         cache.teamCache[teamSlug] = module.exports.createTeamObject(teamSlug)
-        console.log('cache inner', cache)
         // return new team obj
         return cache.teamCache[teamSlug]
       } else {

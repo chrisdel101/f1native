@@ -162,6 +162,7 @@ exports.getDriverObj = (driverSlug, cache) => {
           if (slug) {
             //  add to cache
             console.log('getDriverObj() - NOT FROM CACHE')
+            // map a driver obj with URL
             cache.driverCache[driverSlug] = module.exports.mapDriverObj(slug)
             console.log('getDriverObj 1', cache.driverCache[driverSlug])
             // return new driver obj

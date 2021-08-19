@@ -32,10 +32,10 @@ const App: () => React$Node = () => {
   const [teams, setTeamsData] = useState('') // from search bar
   const [input, setInput] = useState('')
   const [combinedData, setCombinedData] = useState([])
-  const [dropdownDisplay, setDropdownDisplay] = useState('')
+  // const [dropdownDisplay, setDropdownDisplay] = useState('')
   const [driversCardObj, setDriverCardObj] = useState({})
   const [teamCardObj, setTeamCardObj] = useState({})
-  const [base64state, setBase64State] = useState({})
+  // const [base64state, setBase64State] = useState({})
   // track which every last obj clicked
   const [currentSelectionObj, setCurrentSelectionObj] = useState('')
   // array being displayed
@@ -201,6 +201,7 @@ const App: () => React$Node = () => {
   // }
   // add to array to render
   const combineDataToRender = (newObj) => {
+    console.log('Cards to render', cardsToRender)
     // check if obj is already in array
     const notInArray = cardsToRender.every((obj) => {
       // check current obj does not equal any existing
@@ -210,18 +211,16 @@ const App: () => React$Node = () => {
       setCardsToRender([newObj, ...cardsToRender])
     }
   }
-  // add clicked name objs to state
   function addObjToState(obj) {
-    // const type = checkObjType(slug)[0].type
-    // call controllersand get driver urls from api
+    // call controllers and get driver urls from api
     switch (obj.type) {
       case 'driver':
         const driverObj = driverController.getDriverObj(obj.name_slug, cache)
         Promise.resolve(driverObj).then((res) => {
+          // use this syntax to handle when promise not exist
           setDriverCardObj((prevState) => {
             // combine current res with previous state
-            combineDataToRender(res)
-            console.log('res', res)
+            setCardsToRender((prev) => [...prev, res])
             setCurrentSelectionObj(res)
             return {
               ...prevState,
@@ -234,7 +233,8 @@ const App: () => React$Node = () => {
         const teamObj = teamController.getTeamObj(obj.name_slug, cache)
         Promise.resolve(teamObj).then((res) => {
           setTeamCardObj((prevState) => {
-            combineDataToRender(res)
+            // combine current res with previous state
+            setCardsToRender((prev) => [...prev, res])
             setCurrentSelectionObj(res)
             return {
               ...prevState,
@@ -290,23 +290,21 @@ const App: () => React$Node = () => {
         setCombinedData(mainArr)
         setTimeout(() => {
           mainArr.map((item) => {
-            console.log('item', item)
-            console.log('type', addObjToState(item))
-            // addObjToState(item.name_slug)
+            console.log('to state', addObjToState(item))
+            addObjToState(item.name_slug)
           }, 100)
         })
       })
     }
     runCombine()
   }, [])
-  // combine all obj into one array for searching
-  const combineData = (setterFunc, ...args) => {
-    let flat = [...args].flat()
-    setterFunc([...flat])
-  }
+  // // combine all obj into one array for searching
+  // const combineData = (setterFunc, ...args) => {
+  //   let flat = [...args].flat()
+  //   setterFunc([...flat])
+  // }
   return (
     <SafeAreaView style={styles.scrollWrapper}>
-      {console.log('Cards', cardsToRender)}
       <Header
         leftComponent={{icon: 'menu', color: '#fff'}}
         centerComponent={{
