@@ -15,7 +15,8 @@ import {
   View,
   Image,
   Text,
-  Button
+  TouchableOpacity,
+  Touchable
 } from 'react-native'
 
 import InputDropDown from '../../components/InputDropDown.js'
@@ -276,6 +277,10 @@ const Home = ({navigation}) => {
   //   let flat = [...args].flat()
   //   setterFunc([...flat])
   // }
+  function getCardData(props) {
+    console.log('CHILD')
+    props.onPress()
+  }
   return (
     <SafeAreaView style={styles.scrollWrapper}>
       <Header
@@ -286,10 +291,6 @@ const Home = ({navigation}) => {
         }}
         rightComponent={{icon: 'home', color: '#fff'}}
       />
-      <Button
-        title="Go to Jane's profile"
-        onPress={() => navigation.navigate('Profile', {name: 'Jane'})}
-      />
       {/* <MySearchBar onChangeText={handleChildchangeText} value={input} />
        <View style={styles.dropDownContainer}>
          <InputDropDown searchData={dropdownDisplay} onPress={handleClick} />
@@ -297,12 +298,20 @@ const Home = ({navigation}) => {
       <ScrollView contentContainerStyle={styles.scrollView}>
         {cardsToRender.map((card) => {
           return (
-            <Image
-              style={styles.card}
-              source={{
-                uri: card.mobileImageUrl
-              }}
-            />
+            <TouchableOpacity
+              onPress={() => {
+                /* 1. Navigate to the Details route with params */
+                navigation.navigate('Profile', {
+                  data: card
+                })
+              }}>
+              <Image
+                style={styles.card}
+                source={{
+                  uri: card.mobileImageUrl
+                }}
+              />
+            </TouchableOpacity>
           )
         })}
       </ScrollView>

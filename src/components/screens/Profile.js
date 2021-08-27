@@ -7,12 +7,21 @@
  */
 
 import * as React from 'react'
-import {View, Text} from 'react-native'
+import {DatePickerIOSBase} from 'react-native'
+import {View, Text, Image} from 'react-native'
 
-const Profile: () => React$Node = ({navigation}) => {
+const Profile: () => React$Node = ({route, navigation}) => {
+  const {data} = route.params
+  console.log('Data', data)
   return (
-    <View>
-      <Text>Hello</Text>
+    <View style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}>
+      <Text>Details Screen</Text>
+      <Image
+        style={{flex: 1, alignItems: 'center', justifyContent: 'center'}}
+        source={{
+          uri: data.mobileImageUrl
+        }}
+      />
     </View>
   )
 }
